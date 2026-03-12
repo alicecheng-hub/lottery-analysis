@@ -1,0 +1,38 @@
+name: 每日更新樂透開獎資料
+
+on:
+  schedule:
+    # 台灣時間每天 22:30 執行（UTC 14:30）
+    # 大樂透：週一/三/五開獎；今彩539：每天開獎
+    - cron: '30 14 * * *'
+  workflow_dispatch: # 允許手動觸發
+
+jobs:
+  fetch-lottery:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: pip install requests
+
+      - name: 執行抓取腳本
+        run: python fetch_lottery.py
+
+      - name: 推送更新資料
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/lottery.json
+          git diff --staged --quiet || git commit -m "🎱 自動更新開獎資料 $(date +'%Y-%m-%d')"
+          git push
